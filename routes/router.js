@@ -3,7 +3,9 @@ const router = new express.Router();
 const request = require('request');
 const endpoint = require('../controller/endpoint')
 const message = require('../controller/message')
+const acceptProof = require('../controller/acceptProof')
 
+const connection = require('../controller/connection')
 const bodyParser = require("body-parser");
 
 
@@ -79,29 +81,47 @@ router.post('/api/schemaCreation',async (req,res)=>{
 
 router.post('/api/connection',async (req,res)=>{
     try{
-        let did= await endpoint.endpointDid(3000);
-        let didInfo=`{"did":"${did}"}`
-        let connectionReq = {
-                        "headers":headers,
-                        "url":`http://localhost:3001/api/send_connection_request`,
-                        "method":"POST",
-                        "body": didInfo
-                        };
-                        console.log("3")
-                        request(connectionReq,async (error,result)=>{
-                            if(error){
-                                res.send("error")
-                            }
-                            else{
-                                console.log(result)
-                              
-                               
+
+        let flag=0
+        let port=req.body.port;
+        let fixedport=3001;
+        
+
+        let dids= await endpoint.endpointDid(port);
+        console.log("sdf"+dids)
+        let flags = await connection.sendConReq(dids,fixedport,flag)
+        console.log(flags)
+        if (flags==1){
+            let messages= await message.getMessage(port)
+                                let jsMessages=JSON.parse(messages);
+                                let messageId=jsMessages[0].id;
+                                console.log(messageId)
+                                let acceptResponse = await acceptProof.acceptMessage(messageId,port);
+                                console.log("proof acepted"+acceptResponse);
+                                 messages= await message.getMessage(fixedport)
+                                 jsMessages=JSON.parse(messages);
+                                 messageId=jsMessages[0].id;
+                                 acceptResponse = await acceptProof.acceptMessage(messageId,fixedport);
+                                console.log("proof acepted of 3001"+acceptResponse);
+                                res.send("connection established with "+port+""+fixedport)
+        }
+       
+        
+        
+        
+                        
+                        
+                        
+                        
+                                
+
+
 
 
                                 //res.send("credential defintion created"+innerResult)
-                            }
-                        })
-            
+                            
+                    
+                        
         }catch(error){
             res.send("something gone wrong")
         }

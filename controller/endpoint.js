@@ -1,7 +1,9 @@
+const request = require('request');
 
-let endpointDid = async (port)=>{
- 
-    const headers = {"content-type":"application/json"}
+exports.endpointDid = async (port)=>{
+    return new Promise((resolve, reject) => {
+    console.log("inside "+port)
+    let headers = {"content-type":"application/json"}
 
     let endpoint = {
         "headers":headers,
@@ -9,21 +11,21 @@ let endpointDid = async (port)=>{
         "method":"GET",
         
     };
-    request(endpoint,async (error,result)=>{
+    
+     request(endpoint,async (error,result)=>{
         if(error){
+            console.log("error")
             res.send("error")
         }
         else{
          //   res.send("schema create "+result)
-         console.log(result.body)
-            let did=result.body
+         
+            let did= result.body
+            console.log(did+"inside")
+            resolve(did)
         }
     })
 
-
+    })
 
 };
-
-module.exports={
-    endpointDid :endpointDid    
-}
