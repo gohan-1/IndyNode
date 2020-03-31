@@ -1,5 +1,5 @@
 const request = require('request');
-exports.getschema = async (port,payload) =>{
+exports.getCred = async (port,datastring) =>{
     return new Promise((resolve, reject) => {
         console.log("inside schema ")
         let headers = {"content-type":"application/json"}
@@ -8,9 +8,9 @@ exports.getschema = async (port,payload) =>{
 
         let schemaInfo = {
             "headers":headers,
-            "url":`http://localhost:${port}/api/issuer/create_schema`,
+            "url":`http://localhost:${port}/api/issuer/create_cred_def`,
             "method":"POST",
-            "body": payload
+            "body": datastring
             };
    
 

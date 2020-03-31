@@ -1,21 +1,21 @@
 const request = require('request');
-exports.getschema = async (port,payload) =>{
+exports.getrequest = async (port,datastring) =>{
     return new Promise((resolve, reject) => {
-        console.log("inside schema ")
+        console.log("inside request Proof")
         let headers = {"content-type":"application/json"}
         console.log(port)
 
 
-        let schemaInfo = {
+        let requestProofInfo = {
             "headers":headers,
-            "url":`http://localhost:${port}/api/issuer/create_schema`,
+            "url":`http://localhost:${port}/api/requestProof`,
             "method":"POST",
-            "body": payload
+            "body": datastring
             };
    
 
 
-     request(schemaInfo,async (error,result)=>{
+     request(requestProofInfo,async (error,result)=>{
         if(error){
             console.log(error)
             res.send("error")

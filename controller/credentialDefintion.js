@@ -1,6 +1,8 @@
 const request = require('request');
 exports.getcredDef = async (port,tagName) =>{
     return new Promise((resolve, reject) => {
+
+        
         console.log("inside credDef")
         let headers = {"content-type":"application/json"}
         console.log(port)
@@ -22,7 +24,8 @@ exports.getcredDef = async (port,tagName) =>{
             res.send("error")
         }
         else{
-            
+            console.log("testaing")
+            console.log(result.body)
             resolve(result.body)
         }
 

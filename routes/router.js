@@ -9,6 +9,11 @@ const relationship = require('../controller/relationship')
 const acceptOffer = require('../controller/acceptOffer')
 const credentialOffer = require('../controller/credentialOffer')
 const credentialDefintion= require('../controller/credentialDefintion')
+const requetsProof= require('../controller/requestProof')
+const schema= require('../controller/schema')
+
+let incr = 1;
+const createCredential= require('../controller/createCredential')
 
 
 const connection = require('../controller/connection')
@@ -28,58 +33,44 @@ app.use(bodyParser.json());
 
 router.post('/api/schemaCreation',async (req,res)=>{
     try{
-        let payload=`{
-            "name_of_schema": "peopleschema",
-            "version": "1.0",
-            "attributes": [
-                "customerId",
-                "customerPIN",
-                "macId",
-                "IMEI"
-    
-            ]
-        }`;
-        const headers = {"content-type":"application/json"};
-        
-        console.log("hii")
-        let schemaApi = {
-            "headers":headers,
-            "url":`http://localhost:3000/api/issuer/create_schema`,
-            "method":"POST",
-            "body": payload
-        };
+        let port = req.body.port
+        let tagName= req.body.customerId;
+        let names = req.body.attributes;
+       let offers = []
+       for(let i=0;i<names.length;i++){
+            console.log(names[i])
+            offers.push( names[i])
 
-            console.log("2")
-            request(schemaApi,async (error,result)=>{
-                if(error){
-                    res.send("error")
-                }
-                else{
-                 //   res.send("schema create "+result)
-                 console.log(JSON.parse(result.body).id)
-                    let schemaId=JSON.parse(result.body).id
-                    let credPayload=
-                        `{"schema_id": "${schemaId}",
-                        "tag": "mytag"
+        }
+
+        let increment = incr.toString()
+        let payload=`{
+            "name_of_schema": ${JSON.stringify(tagName)},
+            "version": "${increment}.0",
+            "attributes": ${JSON.stringify(offers)}
+        }`;
+        
+        incr=incr+1;
+
+        console.log(payload)
+        console.log("hii")
+      
+         let  sechmaInfo = await schema.getschema(port,payload)
+         let schemaId=JSON.parse(sechmaInfo).id
+        let credPayload=
+            `{"schema_id": "${schemaId}",
+                "tag": "${tagName}"
                         }`;
-                      let credDef = {
-                        "headers":headers,
-                        "url":`http://localhost:3000/api/issuer/create_cred_def`,
-                        "method":"POST",
-                        "body": credPayload
-                        };
+        
                         
-                        request(credDef,async (error,innerResult)=>{
-                            if(error){
-                                res.send("error")
-                            }
-                            else{
-                                console.log(JSON.stringify(innerResult))
-                                res.send("credential defintion created"+JSON.stringify(innerResult))
-                            }
-                        })
-                }
-            })
+
+        let credInfo= await createCredential.getCred(port,credPayload) 
+
+        console.log(credInfo)
+        res.send("credential created")
+                        
+                        
+            
         }catch(error){
             res.send("something gone wrong")
         }
@@ -199,4 +190,64 @@ router.post('/api/credentialOffer',async (req,res)=>{
 
 
 })
+
+
+
+
+router.post('/api/requetsProof',async (req,res)=>{
+    try{
+        let port=req.body.port;
+       let fixedport=3001;
+       
+       let tagName =req.body.tag
+
+
+        // calling relationShip
+        let relationshipInfo= await relationship.getRelationship(port)
+        relationshipInfo= JSON.parse(relationshipInfo)
+        console.log(relationshipInfo[0].their_did)
+
+        // calling credential by tag
+        portcred=req.body.portofcred
+        let credDef = await credentialDefintion.getcredDef(portcred,tagName)
+        console.log(credDef)
+        credDef = JSON.parse(credDef)
+        console.log(credDef.id)
+
+
+        let temp = req.body.listOfAtributes
+        let i = 0;
+        splitsentence=temp.split(",")
+        let dbdata = {"name": `${req.body.transcriptname}`,"version": `${req.body.version}`,"requested_attributes": {"attr1_referent": {"name": "temp","restrictions": [{"cred_def_id": `${credDef.id}`}]}},"requested_predicates": {}}
+        for(i=1;i<=splitsentence.length;i++){
+            dbdata["requested_attributes"]["attr"+i+"_referent"]={"name":"sepListOfAtributse[0]","restrictions": [{"cred_def_id": `${credDef.id}`}]}
+            dbdata["requested_attributes"]["attr"+i+"_referent"]["name"]=splitsentence[i-1]
+             }
+            console.log(dbdata)
+
+    let datastring=`{"their_relationship_did":"${relationshipInfo[0].their_did}","manual_entry": ${JSON.stringify(dbdata)}}`;
+
+    let requetsProofInfo = await requetsProof.getrequest(port,datastring);
+
+    console.log(requetsProofInfo);
+
+    messages= await message.getMessage(fixedport)
+    jsMessages=JSON.parse(messages);
+    messageId=jsMessages[0].id;
+    acceptResponse = await acceptProof.acceptMessage(messageId,fixedport);
+   console.log("proof acepted of 3001"+acceptResponse);
+
+
+   res.send("request proof accepted")
+
+
+
+
+    }catch(e)
+    {
+        res.send("something went wrong")
+    }
+})
+
+
 module.exports = router;
