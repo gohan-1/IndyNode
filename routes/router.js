@@ -11,6 +11,11 @@ const credentialOffer = require('../controller/credentialOffer')
 const credentialDefintion= require('../controller/credentialDefintion')
 const requetsProof= require('../controller/requestProof')
 const schema= require('../controller/schema')
+var crypto = require('crypto');
+//var fs = require('fs');
+
+var md5sum = crypto.createHash('md5');
+
 
 let incr = 1;
 const createCredential= require('../controller/createCredential')
@@ -151,6 +156,12 @@ router.post('/api/credentialOffer',async (req,res)=>{
             })
 
         }
+        console.log(typeof(values[3])+""+values[4])
+        let appId= crypto.createHash('md5').update(values[3]+values[4]).digest('hex')
+        offers.push({
+            name : "appId",
+            value : appId
+        })
         console.log(offers)
         let relationshipInfo= await relationship.getRelationship(port)
         relationshipInfo= JSON.parse(relationshipInfo)
@@ -248,6 +259,57 @@ router.post('/api/requetsProof',async (req,res)=>{
         res.send("something went wrong")
     }
 })
+
+
+
+router.post('/api/verify',async (req,res)=>{
+    try{
+        let port=req.body.port;
+       //let fixedport=3001;
+       
+       //let tagName =req.body.tag
+
+
+        // calling relationShip
+        let relationshipInfo= await relationship.getRelationship(port)
+        relationshipInfo= JSON.parse(relationshipInfo)
+        console.log(relationshipInfo[0].their_did)
+        console.log("mac id"+relationshipInfo[0].metadata.macId)
+        let macids=relationshipInfo[0].metadata.macId
+        let imeis=relationshipInfo[0].metadata.IMEI
+        let customerPINs=relationshipInfo[0].metadata.customerPIN
+        let appNames=relationshipInfo[0].metadata.appName
+        let appIds=relationshipInfo[0].metadata.appId
+        console.log(appIds)
+        console.log(req.body.IMEI+req.body.appName)
+        let machid=crypto.createHash('md5').update(req.body.IMEI+req.body.appName).digest('hex')
+        console.log(machid)
+         machid=crypto.createHash('md5').update(req.body.IMEI+req.body.appName).digest('hex')
+        console.log(machid)
+        console.log(relationshipInfo[0].metadata.customerId)   
+            let customerIds=relationshipInfo[0].metadata.customerId;
+         for (let i=0;i<relationshipInfo[0].metadata.customerId.length;i++){
+            if (appIds[i]==machid){
+                res.send("customer exist with app name"+appNames[i] )
+                
+            }
+           
+         }
+         
+            res.send("customer doesn't exist")
+        
+
+
+
+
+
+    }catch(e)
+    {
+        res.send("something went wrong")
+    }
+})
+
+
 
 
 module.exports = router;

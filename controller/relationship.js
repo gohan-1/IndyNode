@@ -19,7 +19,7 @@ exports.getRelationship = async (port) =>{
         }
         else{
             let nice =result.body
-            console.log(nice)
+            
             resolve(result.body)
         }
 
