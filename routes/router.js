@@ -4,6 +4,7 @@ const request = require('request');
 const endpoint = require('../controller/endpoint')
 const message = require('../controller/message')
 const acceptProof = require('../controller/acceptProof')
+var CryptoJS = require("crypto-js");
 const relationship = require('../controller/relationship')
 
 const acceptOffer = require('../controller/acceptOffer')
@@ -158,9 +159,11 @@ router.post('/api/credentialOffer',async (req,res)=>{
         }
         console.log(typeof(values[3])+""+values[4])
         let appId= crypto.createHash('md5').update(values[3]+values[4]).digest('hex')
+        let appIde=CryptoJS.AES.encrypt(values[0], values[4]).toString();
+
         offers.push({
             name : "appId",
-            value : appId
+            value : appIde
         })
         console.log(offers)
         let relationshipInfo= await relationship.getRelationship(port)
@@ -183,7 +186,7 @@ router.post('/api/credentialOffer',async (req,res)=>{
         messageId=jsMessages[0].id;
         acceptResponse = await acceptOffer.acceptOffers(messageId,fixedport);
 
-        res.send("credential accepted "+ acceptResponse)
+        res.send("credential accepted "+ acceptResponse+ appIde)
 
 
 
@@ -278,19 +281,31 @@ router.post('/api/verify',async (req,res)=>{
         let macids=relationshipInfo[0].metadata.macId
         let imeis=relationshipInfo[0].metadata.IMEI
         let customerPINs=relationshipInfo[0].metadata.customerPIN
-        let appNames=relationshipInfo[0].metadata.appName
+        let userNames=relationshipInfo[0].metadata.userName
         let appIds=relationshipInfo[0].metadata.appId
         console.log(appIds)
-        console.log(req.body.IMEI+req.body.appName)
-        let machid=crypto.createHash('md5').update(req.body.IMEI+req.body.appName).digest('hex')
-        console.log(machid)
-         machid=crypto.createHash('md5').update(req.body.IMEI+req.body.appName).digest('hex')
-        console.log(machid)
+        //console.log(req.body.IMEI+req.body.userName)
+        // let machid=crypto.createHash('md5').update(req.body.IMEI+req.body.appName).digest('hex')
+        // console.log(machid)
+        //  machid=crypto.createHash('md5').update(req.body.IMEI+req.body.appName).digest('hex')
+        // console.log(machid)  
+
+        // let machid=CryptoJS.AES.encrypt(req.body.IMEI, req.body.userName).toString();
+        // console.log(machid)
+
         console.log(relationshipInfo[0].metadata.customerId)   
             let customerIds=relationshipInfo[0].metadata.customerId;
          for (let i=0;i<relationshipInfo[0].metadata.customerId.length;i++){
-            if (appIds[i]==machid){
-                res.send("customer exist with app name"+appNames[i] )
+             console.log("first")
+            if (appIds[i]==req.body.appId){
+                console.log("seconde")
+
+                var bytes  = CryptoJS.AES.decrypt(appIds[i],req.body.userName);
+                console.log("third")
+                var originalText = bytes.toString(CryptoJS.enc.Utf8);
+ 
+                console.log(originalText); // 'my message'
+                res.send("customer exist with  customer Id"+originalText )
                 
             }
            
